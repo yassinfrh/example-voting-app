@@ -1,5 +1,5 @@
 ---
-name: Build vote
+name: Build worker
 
 on:
   push:
@@ -27,11 +27,30 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Build and export to Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: "{{defaultContext}}:worker"
+          push: false
+          load: true # Export to Docker Engine rather than pushing to a registry
+          tags: ${{ github.run_id }}
+          target: test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Run Trivy for all CVEs (non-blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ github.run_id }}
+          exit-code: 0
+          format: table 
+
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
-          images: yassinfrh/voting-app-vote
+          images: yassinfrh/voting-app-worker
           flavor: |
             latest=false
           tags: |
@@ -44,7 +63,7 @@ jobs:
       - name: Docker build and push
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:vote"
+          context: "{{defaultContext}}:worker"
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
