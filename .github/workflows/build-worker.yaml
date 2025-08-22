@@ -1,5 +1,5 @@
 ---
-name: Build result
+name: Build worker
 
 on:
   push:
@@ -27,9 +27,9 @@ jobs:
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:result"
+          context: "{{defaultContext}}:worker"
           push: ${{ github.event_name != 'pull_request' }}
-          tags: yassinfrh/voting-app-result
+          tags: yassinfrh/voting-app-worker
 #NEW: (START) ##########################################################
           cache-from: type=gha
           cache-to: type=gha,mode=max
