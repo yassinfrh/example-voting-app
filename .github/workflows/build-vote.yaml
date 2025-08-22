@@ -1,5 +1,5 @@
 ---
-name: Build worker
+name: Build vote
 
 on:
   push:
@@ -13,7 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
     steps:
+      - name: Checkout git repo
+        uses: actions/checkout@v5
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -30,7 +34,7 @@ jobs:
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:worker"
+          context: "{{defaultContext}}:vote"
           push: false
           load: true # Export to Docker Engine rather than pushing to a registry
           tags: ${{ github.run_id }}
@@ -45,11 +49,28 @@ jobs:
           exit-code: 0
           format: table 
 
+      - name: Run Trivy for HIGH,CRITICAL CVEs and report (blocking)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ github.run_id }}
+          exit-code: 1
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'HIGH,CRITICAL'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
       - name: Docker meta
         id: docker_meta
         uses: docker/metadata-action@v5
         with:
-          images: yassinfrh/voting-app-worker
+          images: yassinfrh/voting-app-vote
           flavor: |
             latest=false
           tags: |
@@ -62,7 +83,7 @@ jobs:
       - name: Docker build and push
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:worker"
+          context: "{{defaultContext}}:vote"
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
