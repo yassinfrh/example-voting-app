@@ -11,6 +11,8 @@ jobs:
   build-image:
     name: Build Image
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
 
       - name: Set up QEMU
@@ -39,7 +41,7 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
 
-      - name: Docker build
+      - name: Docker build and push
         uses: docker/build-push-action@v6
         with:
           context: "{{defaultContext}}:vote"
@@ -49,3 +51,30 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64,linux/arm/v7
+
+      - name: Find comment for image tags
+        uses: peter-evans/find-comment@v3
+        if: github.event_name == 'pull_request'
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Docker image tag(s) pushed
+
+      - name: Create or update comment for image tags
+        uses: peter-evans/create-or-update-comment@v4
+        if: github.event_name == 'pull_request'
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Docker image tag(s) pushed:
+            ```text
+            ${{ steps.docker_meta.outputs.tags }}
+            ```
+
+            Labels added to images:
+            ```text
+            ${{ steps.docker_meta.outputs.labels }}
+            ```
+          edit-mode: replace
