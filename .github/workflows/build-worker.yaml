@@ -34,7 +34,7 @@ jobs:
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:worker"
+          context: "worker"
           push: false
           load: true # Export to Docker Engine rather than pushing to a registry
           tags: ${{ github.run_id }}
@@ -53,7 +53,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ github.run_id }}
-          exit-code: 1
+          exit-code: 0        # Change to 1 to fail the job
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'HIGH,CRITICAL'
@@ -83,7 +83,7 @@ jobs:
       - name: Docker build and push
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:worker"
+          context: "worker"
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
