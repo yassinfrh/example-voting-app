@@ -34,7 +34,7 @@ jobs:
       - name: Build and export to Docker
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:result"
+          context: "result"
           push: false
           load: true # Export to Docker Engine rather than pushing to a registry
           tags: ${{ github.run_id }}
@@ -83,7 +83,7 @@ jobs:
       - name: Docker build and push
         uses: docker/build-push-action@v6
         with:
-          context: "{{defaultContext}}:result"
+          context: "result"
           push: true
           tags: ${{ steps.docker_meta.outputs.tags }}
           labels: ${{ steps.docker_meta.outputs.labels }}
