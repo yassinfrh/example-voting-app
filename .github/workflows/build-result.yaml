@@ -1,5 +1,5 @@
 ---
-name: 02 Build with BuildKit Cache
+name: Build result
 
 on:
   push:
@@ -27,8 +27,9 @@ jobs:
       - name: Docker build
         uses: docker/build-push-action@v6
         with:
+          context: ./result
           push: ${{ github.event_name != 'pull_request' }}
-          tags: bretfisher/docker-ci-automation:02
+          tags: yassinfrh/voting-app-result
 #NEW: (START) ##########################################################
           cache-from: type=gha
           cache-to: type=gha,mode=max
